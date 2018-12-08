@@ -32,8 +32,16 @@ if (!WEBGL.isWebGLAvailable()) {
 /*
  *  Declaration of globals to the application
  */
-var scene, camera, renderer, trackBallControl, stats;
+var scene, camera, renderer, trackBallControl, outCube, gui_control;
+var cell_half_dist = 10;
+var cube_size = 40;
+var out_box_size = 200;
+var out_box_coord_end = - (Math.floor(out_box_size / 2));
+var num_cells = Math.floor(out_box_size / (cube_size + 2 * cell_half_dist));
 var boxes = [];
+var settings = { Expand: 15, Size: 20, Start: false };
+
+window.addEventListener('resize', onResize);
 
 /*
  * Name: init
@@ -50,9 +58,9 @@ function init()
     set_renderer();
     create_lights();
     create_controls();
+    create_panel();
     create_cells();
 
-    window.addEventListener('resize', onResize);
 }
 
 /*
@@ -77,6 +85,31 @@ function create_controls()
     trackBallControl.keys = [65, 68, 83];
 
     trackBallControl.addEventListener('change', render);
+}
+
+/*
+ * Name: create_panel
+ * Parameters: none
+ * Returns: none
+ * Does: Creates a dat.gui elem and adds GUI elements
+ */
+function create_panel() 
+{
+    gui_control = new dat.GUI();
+    gui_control.add(settings, 'Expand', 1, 100, 0.1).onChange();
+    gui_control.add(settings, 'Size', 1, 100, 1).onChange();
+    gui_control.add(settings, 'Start', true).onChange();
+}
+
+/*
+ *
+ *
+ *
+ *
+ */
+function panel_change() 
+{
+
 }
 
 /*
@@ -134,13 +167,25 @@ function onResize ()
     camera.updateProjectionMatrix();
 }
 
+/*
+ * Name: out_box
+ * Parameters: none
+ * Return: none
+ * Does: Creates an outer box for the cubes and adds them to
+ *       scene.
+ */
+function out_box () 
+{
+    var geometry = new THREE.BoxBufferGeometry(200, 200, 200);
+    var material = new THREE.MeshLambertMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.06
+    });
 
-//
-//  This part will be turned into a class
-//  of a cube
-//
-var geometry = new THREE.BoxGeometry(30, 30, 30);
-var material = new THREE.MeshBasicMaterial({color: 0xfffff, wireframe: true});	
+    outCube = new THREE.Mesh(geometry, material);
+    scene.add(outCube);
+}
 
 /*
  * Name: animate
@@ -167,18 +212,77 @@ var animate = function ()
 
 function create_cells () 
 {
-    for (var i = 0; i < 10; i++)
-    {
-        var x = Math.random() * 150 - 70;
-        var y = Math.random() * 150 - 70;
-        var z = Math.random() * 150 - 70;
+    out_box();
+    create_cell_helper();
+}
 
-        var cube = new THREE.Mesh(geometry, material);
-        cube.position.set(x,y,z);
-        scene.add(cube);
-        boxes.push(cube);
+/*
+ * Name: create_cell_helper
+ * Parameters: none
+ * Return: none
+ * Does: This is a helper function that creates cells
+ *
+ *
+ */
+function create_cell_helper () 
+{
+    for (var i = 0; i < num_cells; i++) {
+        boxes[i] = new Array(num_cells);
+        for (var j = 0; j < num_cells; j++) {
+            boxes[i][j] = new Array(num_cells);
+            for (var k = 0; k < num_cells; k++) 
+            {
+                var cell = new Cell();
+
+                var position  = out_box_coord_end + (cube_size / 2 + 
+                                                (cell_half_dist / 2));
+
+                var increment = cube_size + 2 * cell_half_dist;
+                
+                cell.position(position + increment * k, 
+                                                position + increment * j, 
+                                                    position + increment * i);
+
+                outCube.add(cell.cube);
+                boxes[i][j][k] = cell;
+            }
+        }
     }
 }
+
+/*
+ * Name: Cell
+ * Type: Class
+ * Represents: represents a cell which is by
+ *             default alive but can be killed.
+ *
+ *
+ *
+ */
+class Cell {
+    constructor() 
+    {
+        var geometry = new THREE.BoxBufferGeometry(cube_size,
+                                         cube_size, cube_size);
+        var material = new THREE.MeshBasicMaterial({
+                    color: Math.random() * 0xffffff
+        });
+        this.__cube = new THREE.Mesh(geometry, material);
+        this.__life = true;
+    }
+
+    position (x, y, z) { this.__cube.position.set(x, y, z); }
+
+    kill () { this.__life = false; }
+
+    birth () { this.__life = true; }
+
+    get life() { return this.__life; }
+
+    get cube() { return this.__cube; }
+}
+
+
 
 /*
  * Name: update
@@ -188,7 +292,8 @@ function create_cells ()
  */
 function update ()
 {
-
+    //outCube.rotation.x += 0.00009;
+    outCube.rotation.y += 0.009;
 }
 
 /*
@@ -199,14 +304,7 @@ function update ()
  */
 function render() 
 {
-    length = boxes.length;
-
-    for (var i = 0; i < length; i++)
-    {
-        boxes[i].rotation.x += 0.01;
-        boxes[i].rotation.y += 0.01;
-    };
-
+    update();
     renderer.render(scene, camera);
 };
 
