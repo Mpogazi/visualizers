@@ -32,16 +32,20 @@ if (!WEBGL.isWebGLAvailable()) {
 /*
  *  Declaration of globals to the application
  */
-var scene, camera, renderer, trackBallControl, outCube, gui_control;
+var scene, camera, renderer, trackBallControl, outCube, gui_control,
+    num_cells, out_box_coord_end;
 var cell_half_dist = 10;
-var cube_size = 40;
-var out_box_size = 200;
-var out_box_coord_end = - (Math.floor(out_box_size / 2));
-var num_cells = Math.floor(out_box_size / (cube_size + 2 * cell_half_dist));
+var cube_size = 20;
+var out_box_size = 250;
 var boxes = [];
-var settings = { Expand: 15, Size: 20, Start: false };
+var settings = {
+    Expand: cell_half_dist,
+    Cellsize: cube_size,
+    Start: false
+};
 
-window.addEventListener('resize', onResize);
+var start = false;
+
 
 /*
  * Name: init
@@ -54,13 +58,14 @@ function init()
 {
     scene = new THREE.Scene();
     renderer = new THREE.WebGLRenderer();
+    create_panel();
     create_camera();
     set_renderer();
     create_lights();
     create_controls();
-    create_panel();
     create_cells();
-
+    window.addEventListener('resize', onResize);
+    window.setInterval(next_round, 1200);
 }
 
 /*
@@ -71,7 +76,7 @@ function init()
  */
 function create_controls() 
 {
-    trackBallControl = new THREE.TrackballControls(camera);
+    trackBallControl = new THREE.TrackballControls(camera, renderer.domElement);
     
     trackBallControl.rotateSpeed = 1.0;
     trackBallControl.zoomSpeed = 1.2;
@@ -95,21 +100,87 @@ function create_controls()
  */
 function create_panel() 
 {
-    gui_control = new dat.GUI();
-    gui_control.add(settings, 'Expand', 1, 100, 0.1).onChange();
-    gui_control.add(settings, 'Size', 1, 100, 1).onChange();
-    gui_control.add(settings, 'Start', true).onChange();
+    gui_control = new dat.GUI({ width: 200 });
+    gui_control.add(settings, 'Expand', 10, 30).listen().onChange(set_expansion);
+    gui_control.add(settings, 'Cellsize', 20, 30).listen().onChange(set_cellsize);
+    gui_control.add(settings, 'Start').onChange(set_start);
+    gui_control.open();
 }
 
 /*
- *
- *
- *
- *
+ * Name: set_cell_size
+ * Parameters: value
+ * Returns: none
+ * Does: Sets the cell size and Repaint the canvas
  */
-function panel_change() 
+function set_cellsize (value) 
 {
+    cube_size = value;
+    change_cell_size(value);
+}
 
+function change_cell_size (value) 
+{
+    for(var i = 0; i < num_cells; i++) 
+    {
+        for(var j = 0; j < num_cells; j++) 
+        {
+            for(var k = 0; k < num_cells; k++) 
+            {
+                boxes[i][j][k].change_size(value);
+            }
+        }
+    }
+}
+
+
+/*
+ * Name: set_start
+ * Parameters: value
+ * Returns: none
+ * Does: Sets start global var to the param passed
+ */
+function set_start(value) 
+{
+    start = value;
+}
+
+/*
+ * Name: set_expansion
+ * Parameters: value
+ * Returns: none
+ * Does: Sets the expand size and Repaint the canvas
+ */
+
+function set_expansion(value) 
+{
+    cell_half_dist = value;
+    change_position(value);
+}
+
+/*
+ * Name: change_position
+ * Parameters: value
+ * Returns: none
+ * Does: Changes the position of every cell and expands
+ *       the distance between the cells.
+ */
+function change_position(value) 
+{
+    for(var i = 0; i < num_cells; i++) 
+    {
+        for(var j = 0; j < num_cells; j++) 
+        {
+            for(var k = 0; k < num_cells; k++) 
+            {
+                if (boxes[i][j][k] != null) {
+                    var position  = out_box_coord_end + (cube_size / 2 + (value / 2));
+                    var increment = cube_size + 2 * value;
+                    boxes[i][j][k].position(position + increment * k, position + increment * j, position + increment * i);
+                }
+            }
+        }
+    }
 }
 
 /*
@@ -121,7 +192,7 @@ function panel_change()
 function create_camera() {
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / 
                                             window.innerHeight ,1 , 1000);
-    camera.position.z = 400;
+    camera.position.z = 500;
 }
 
 /*
@@ -136,7 +207,6 @@ function set_renderer ()
 
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    // renderer.setClearColor()
     renderer.shadowMapEnabled = true;
     renderer.shadowMapType = THREE.PCFSoftShadowMap;
     renderer.shadowMapSoft = true;
@@ -180,7 +250,7 @@ function out_box ()
     var material = new THREE.MeshLambertMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.06
+        opacity: 0.001
     });
 
     outCube = new THREE.Mesh(geometry, material);
@@ -199,7 +269,7 @@ var animate = function ()
 {
     requestAnimationFrame(animate);
     trackBallControl.update();
-    //update();
+    update();
     render();
 }
 
@@ -226,6 +296,9 @@ function create_cells ()
  */
 function create_cell_helper () 
 {
+    out_box_coord_end = - (Math.floor(out_box_size / 2));
+    num_cells = Math.floor(out_box_size / (cube_size + 2 * cell_half_dist));
+    
     for (var i = 0; i < num_cells; i++) {
         boxes[i] = new Array(num_cells);
         for (var j = 0; j < num_cells; j++) {
@@ -243,7 +316,11 @@ function create_cell_helper ()
                                                 position + increment * j, 
                                                     position + increment * i);
 
-                outCube.add(cell.cube);
+                var rand_num = Math.round(Math.random());
+                if (!rand_num) {
+                    cell.kill();
+                }
+                outCube.add(cell.cube);                
                 boxes[i][j][k] = cell;
             }
         }
@@ -255,9 +332,6 @@ function create_cell_helper ()
  * Type: Class
  * Represents: represents a cell which is by
  *             default alive but can be killed.
- *
- *
- *
  */
 class Cell {
     constructor() 
@@ -269,20 +343,146 @@ class Cell {
         });
         this.__cube = new THREE.Mesh(geometry, material);
         this.__life = true;
+        this.__alive_neighbors = 0;
     }
+
+    change_size (value) {
+        var geom = new THREE.BoxBufferGeometry(value, value, value);
+        this.__cube.geometry.dispose();
+        this.__cube.geometry = geom;   
+    }
+
+    get neighbors() { return this.__alive_neighbors; }
+
+    set_neighbors (value) { this.__alive_neighbors = value; }
 
     position (x, y, z) { this.__cube.position.set(x, y, z); }
 
-    kill () { this.__life = false; }
+    kill () { 
+        this.__life = false;
+        this.__cube.material.opacity = 0.00;
+        this.__cube.material.transparent = true;
+    }
 
-    birth () { this.__life = true; }
+    birth () { 
+        this.__life = true;
+        this.__cube.material.transparent = false;
+        this.__cube.material.opacity = 1.0;
+    }
 
     get life() { return this.__life; }
 
     get cube() { return this.__cube; }
 }
 
+/*
+ * Name: next_round
+ * Parameters: none
+ * Return: none
+ * Does: Computes the number of neighbors and 
+ *       Call the life_or_death function.
+ */
+function next_round() 
+{
+    if (start) {
+        for (var i = 0; i < num_cells; i++) {
+            for (var j = 0; j < num_cells; j++) {
+                for (var k = 0; k < num_cells; k++) {
+                    var neighbors = count_neighbors (i, j, k);
+                    boxes[i][j][k].set_neighbors(neighbors);
+                }
+            }
+        }
+        life_or_death();
+    }
+}
 
+/*
+ * Name: life_or_death
+ * Parameters: none
+ * Return: none
+ * Does: Checks which cells are to survice or Die based
+ *       on the number of neighbors.
+ */
+function life_or_death() 
+{
+    for (var i = 0; i < num_cells; i++) {
+        for (var j = 0; j < num_cells; j++) {
+            for (var k = 0; k < num_cells; k++) {
+                var n_bor = boxes[i][j][k].neighbors;
+                if (n_bor <= 8 && n_bor >= 5) {
+                    boxes[i][j][k].birth();
+                } else if ( n_bor <= 7 && n_bor >= 4) {
+                    boxes[i][j][k].birth();
+                } else {
+                    boxes[i][j][k].kill();
+                }
+            }
+        }
+    }
+}
+
+/*
+ * Name: count_neighbors
+ * Parameters: i, j, k (3D coordinates)
+ * Return: number of nieghbors
+ * Does: Counts the number of neighbors of a certain cell
+ */
+function count_neighbors (i, j, k) 
+{
+    var count = 0;
+
+    if (i != 0)
+        if (boxes[i - 1][j][k].life)
+            count++;
+    
+    if (i != 0 && j != 0)
+        if (boxes[i - 1][j - 1][k].life)
+            count++;
+    
+    if (i != 0 && j != 0 && k != 0)
+        if (boxes[i - 1][j - 1][k - 1].life)
+            count++;
+
+    if (j != 0)
+        if (boxes[i][j - 1][k].life)
+            count++;
+
+    if (k != 0)
+        if (boxes[i][j][k - 1].life)
+            count++;
+
+    if (j != 0 && k != 0)
+        if (boxes[i][j - 1][k - 1].life)
+            count++;
+
+    if (j != (num_cells - 1))
+        if (boxes[i][j + 1][k].life)
+            count++;
+
+    if (k != (num_cells - 1))
+        if (boxes[i][j][k + 1].life)
+            count++;
+
+    if (i != (num_cells - 1))
+        if (boxes[i + 1][j][k].life)
+            count++;
+
+    if (i != (num_cells - 1) && j != (num_cells - 1))
+        if (boxes[i + 1][j + 1][k].life)
+            count++;
+
+    if (i != (num_cells - 1) && j != (num_cells - 1) && k != (num_cells - 1))
+        if (boxes[i + 1][j + 1][k + 1].life)
+            count++;
+
+    if (j != (num_cells - 1) && k != (num_cells - 1))
+        if (boxes[i][j + 1][k + 1].life)
+            count++;
+
+
+    return count;
+}
 
 /*
  * Name: update
@@ -293,7 +493,9 @@ class Cell {
 function update ()
 {
     //outCube.rotation.x += 0.00009;
-    outCube.rotation.y += 0.009;
+    if (start) {
+        outCube.rotation.y += 0.004;    
+    }
 }
 
 /*
