@@ -1,18 +1,22 @@
 # 3D GAME OF LIFE
 
 Partners:
+	
 	* Imogen Lea
 	* Fabrice B. Mpogazi
 
 Used Libraries:
+	
 	* Three.js
 	* Dat.gui.js
 
 Purpose:
+	
 	* Visualization of a cell automata system in 3D
 	* Learning and using three.js library
 
 Future Improvements:
+	
 	* A back end. ie. This program might add a feature like time
 	  prediction of when the system returns to the initial state,
 	  time it takes for the whole generation to die (Whether infinite or
