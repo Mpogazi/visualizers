@@ -1,0 +1,21 @@
+{
+  "name": "game_of_life",
+  "version": "1.0.0",
+  "description": "A 3D Game of life",
+  "main": "main.js",
+  "scripts": {
+    "test": "node main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.cs.tufts.edu/fmpoga01/game_of_life.git"
+  },
+  "keywords": [
+    "Game",
+    "of",
+    "Life",
+    "Conway"
+  ],
+  "author": "Fabrice B. Mpogazi",
+  "license": "MIT"
+}
