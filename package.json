@@ -4,7 +4,7 @@
   "description": "A 3D Game of life",
   "main": "main.js",
   "scripts": {
-    "test": "node main.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -17,5 +17,16 @@
     "Conway"
   ],
   "author": "Fabrice B. Mpogazi",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.16.4",
+    "express-session": "^1.15.6",
+    "express-validator": "^5.3.1",
+    "flash": "^1.1.0",
+    "passport": "^0.4.0",
+    "path": "^0.12.7",
+    "pug": "^2.0.3"
+  }
 }
