@@ -4,8 +4,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --output-path ../dist/",
-    "watch": "ng build --watch --configuration development",
+    "build": "ng build --output-path ../dist/ --prod",
+    "watch": "ng build --watch",
     "test": "ng test"
   },
   "private": true,
