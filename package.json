@@ -2,26 +2,20 @@
   "name": "visualizers",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node -r $(test -f ./dist/index.js && echo './dist/index.js' || echo './index.ts')",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "postinstall": "cd front_end && npm install && npm run build"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Mpogazi/visualizers.git"
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
   },
-  "keywords": [],
-  "author": "",
+  "author": "Fabrice B. Mpogazi",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Mpogazi/visualizers/issues"
-  },
-  "homepage": "https://github.com/Mpogazi/visualizers#readme",
   "dependencies": {
+    "@angular/cli": "^16.1.3",
     "express": "^4.18.2"
-  },
-  "devDependencies": {
-    "@types/node": "^20.3.3"
   }
 }
